@@ -1,0 +1,340 @@
+#!/usr/bin/env bash
+# agent-teach — installation et entretien d'un dossier de cours.
+#
+#   agent-teach init [dossier]        installe le dispositif (idempotent)
+#   agent-teach maj  [dossier]        met à jour le noyau — diff par défaut
+#   agent-teach doctor [dossier]      vérifie une installation
+#   agent-teach echeances <args…>     raccourci vers le moteur d'échéances
+#   agent-teach version
+#
+# Ce script n'écrit JAMAIS dans progression/, ni dans curriculum.md, ni dans
+# CLAUDE.md, ni dans settings.json une fois qu'ils existent. La liste de ce qu'il
+# a le droit d'écraser est dans noyau/NOYAU.manifest, et nulle part ailleurs.
+
+set -u
+
+AT_BIN=$(cd "$(dirname "$0")" && pwd)
+AT_DEPOT=$(cd "$AT_BIN/.." && pwd)
+AT_NOYAU="$AT_DEPOT/noyau"
+AT_GABARIT="$AT_NOYAU/gabarit"
+AT_MANIFESTE="$AT_NOYAU/NOYAU.manifest"
+
+. "$AT_NOYAU/hooks/lib.sh"
+
+[ -f "$AT_MANIFESTE" ] || at_die "manifeste introuvable : $AT_MANIFESTE"
+
+VERSION=$(cat "$AT_NOYAU/VERSION" 2>/dev/null || echo "inconnue")
+
+# ------------------------------------------------------------- utilitaires ---
+
+usage() {
+  sed -n '3,9p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+# Lignes utiles du manifeste : « source -> destination »
+manifeste() {
+  sed 's/#.*//' "$AT_MANIFESTE" | awk -F'->' '
+    NF == 2 {
+      s = $1; d = $2
+      gsub(/^[ \t]+|[ \t]+$/, "", s); gsub(/^[ \t]+|[ \t]+$/, "", d)
+      if (s != "" && d != "") print s "|" d
+    }'
+}
+
+# Copie un fichier en créant son dossier parent.
+poser() {
+  mkdir -p "$(dirname "$2")"
+  cp "$1" "$2"
+}
+
+# Le bloc AUTO est la seule observation qui vive dans le noyau. On le sauve.
+sauver_auto() {
+  local skill="$1/.claude/skills/teach/SKILL.md" tmp
+  [ -f "$skill" ] || return 1
+  grep -q '<!-- at:auto:debut -->' "$skill" || return 1
+  tmp=$(mktemp "${TMPDIR:-/tmp}/at-auto.XXXXXX")
+  at_bloc "$skill" auto > "$tmp"
+  printf '%s\n' "$tmp"
+}
+
+# Le même fichier, bloc AUTO vidé. Sert à comparer deux versions de SKILL.md
+# sans que l'observation de l'apprenant ressorte comme une différence de noyau.
+sans_auto() {
+  awk '
+    $0 == "<!-- at:auto:debut -->" { print; dedans = 1; next }
+    $0 == "<!-- at:auto:fin -->"   { dedans = 0 }
+    !dedans { print }
+  ' "$1"
+}
+
+# Copie normalisée d'un fichier, prête à être comparée. Rend un chemin temporaire.
+normaliser() {
+  local tmp
+  tmp=$(mktemp "${TMPDIR:-/tmp}/at-norm.XXXXXX")
+  case "$1" in
+    *SKILL.md) sans_auto "$1" > "$tmp" ;;
+    *)         cp "$1" "$tmp" ;;
+  esac
+  printf '%s\n' "$tmp"
+}
+
+ok()    { printf '  ✓ %s\n' "$*"; }
+manque(){ printf '  ✗ %s\n' "$*"; }
+note()  { printf '  · %s\n' "$*"; }
+
+# ---------------------------------------------------------------- init -------
+
+cmd_init() {
+  local cible="${1:-.}"
+  cible=$(cd "$cible" 2>/dev/null && pwd) || at_die "dossier introuvable : ${1:-.}"
+
+  echo "agent-teach $VERSION → $cible"
+  echo
+
+  # 1. Le noyau, intégralement écrasable : c'est sa définition. Seule exception,
+  #    le bloc AUTO — de l'observation, qu'une réinstallation ne doit pas coûter.
+  local n=0 auto
+  auto=$(sauver_auto "$cible") || auto=""
+
+  manifeste | while IFS='|' read -r src dst; do
+    [ -f "$AT_NOYAU/$src" ] || { at_err "  ! absent du dépôt : $src"; continue; }
+    poser "$AT_NOYAU/$src" "$cible/$dst"
+  done
+  n=$(manifeste | wc -l | tr -d ' ')
+  chmod +x "$cible"/.claude/hooks/*.sh 2>/dev/null
+  ok "noyau installé — $n fichiers sous .claude/"
+
+  if [ -n "$auto" ] && [ -s "$auto" ]; then
+    at_remplace_bloc "$cible/.claude/skills/teach/SKILL.md" auto "$auto"
+    ok "bloc AUTO préservé ($(wc -l < "$auto" | tr -d ' ') lignes)"
+  fi
+  [ -n "$auto" ] && rm -f "$auto"
+
+  # 2. settings.json : posé s'il n'existe pas, jamais écrasé.
+  if [ -f "$cible/.claude/settings.json" ]; then
+    note "settings.json existe — laissé tel quel (\`agent-teach maj\` en montre le diff)"
+  else
+    poser "$AT_NOYAU/settings.json" "$cible/.claude/settings.json"
+    ok "settings.json — hooks SessionStart et Stop câblés"
+  fi
+
+  # 3. Espace apprenant : posé une fois, jamais retouché. C'est l'invariant
+  #    qui rend `init` rejouable sans rien perdre.
+  local pose_prog=0 f
+  mkdir -p "$cible/progression/fiches"
+  for f in checklist profil journal glossaire sources; do
+    if [ ! -f "$cible/progression/$f.md" ]; then
+      poser "$AT_GABARIT/progression/$f.md" "$cible/progression/$f.md"
+      pose_prog=$(( pose_prog + 1 ))
+    fi
+  done
+  if [ "$pose_prog" -gt 0 ]; then
+    ok "progression/ — $pose_prog fichiers posés"
+  else
+    note "progression/ existe — intégralement préservé, rien n'a été touché"
+  fi
+
+  # 4. Zone intermédiaire : posée une fois, puis propriété de l'apprenant.
+  for f in curriculum.md CLAUDE.md README.md; do
+    if [ -f "$cible/$f" ]; then
+      note "$f existe — laissé tel quel"
+    else
+      poser "$AT_GABARIT/$f" "$cible/$f"
+      ok "$f posé"
+    fi
+  done
+
+  # 5. Le garde-fou droit d'auteur.
+  if [ ! -f "$cible/.gitignore" ]; then
+    poser "$AT_GABARIT/gitignore" "$cible/.gitignore"
+    ok ".gitignore posé — cours/ exclu"
+  elif grep -q '^cours/' "$cible/.gitignore"; then
+    ok ".gitignore existe et exclut déjà cours/"
+  else
+    printf '\n# Ajouté par agent-teach : les supports du professeur sont sous SON\n# droit d'"'"'auteur. Les pousser sur un dépôt public est un problème réel.\ncours/\n.claude/.seance/\n' >> "$cible/.gitignore"
+    ok ".gitignore complété — cours/ exclu"
+  fi
+
+  mkdir -p "$cible/cours"
+  echo
+  echo "Installé. Suite :"
+  echo
+  echo "  cd $cible"
+  echo "  # déposer les supports dans cours/  (mode A — cours fourni)"
+  echo "  claude"
+  echo "  /intake"
+  echo
+  echo "L'intake dure un quart d'heure et s'arrête sur deux validations."
+  echo "Il n'est pas facultatif : sans profil ni curriculum, une séance ne s'inscrit"
+  echo "nulle part et ne sera jamais re-testée."
+}
+
+# ----------------------------------------------------------------- maj -------
+
+cmd_maj() {
+  local cible="." appliquer=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --appliquer) appliquer=1; shift ;;
+      -*) at_die "option inconnue : $1" ;;
+      *) cible="$1"; shift ;;
+    esac
+  done
+  cible=$(cd "$cible" 2>/dev/null && pwd) || at_die "dossier introuvable"
+  [ -d "$cible/.claude" ] || at_die "$cible ne ressemble pas à un dossier de cours (.claude/ absent)."
+
+  local installee
+  installee=$(cat "$cible/.claude/VERSION" 2>/dev/null || echo "inconnue")
+  echo "noyau installé : $installee → dépôt : $VERSION"
+  echo
+
+  local change=0 nouveau=0 a b
+  while IFS='|' read -r src dst; do
+    if [ ! -f "$cible/$dst" ]; then
+      printf '  + %s (nouveau)\n' "$dst"
+      nouveau=$(( nouveau + 1 ))
+      continue
+    fi
+    a=$(normaliser "$cible/$dst"); b=$(normaliser "$AT_NOYAU/$src")
+    if ! cmp -s "$a" "$b"; then
+      printf '  ~ %s\n' "$dst"
+      change=$(( change + 1 ))
+      [ "$appliquer" -eq 1 ] || diff -u "$a" "$b" | sed '1,2d; s/^/      /' | head -40
+    fi
+    rm -f "$a" "$b"
+  done <<EOF
+$(manifeste)
+EOF
+
+  if [ "$change" -eq 0 ] && [ "$nouveau" -eq 0 ]; then
+    echo "  (rien à faire — le noyau est à jour)"
+    return 0
+  fi
+
+  if [ "$appliquer" -eq 0 ]; then
+    echo
+    echo "Diff seulement. Pour appliquer : agent-teach maj $cible --appliquer"
+    echo
+    echo "Ne seront écrasés que les fichiers ci-dessus, qui sont ceux du manifeste."
+    echo "progression/, curriculum.md, CLAUDE.md et settings.json ne le sont jamais :"
+    echo "ils n'y figurent pas, et c'est structurel."
+    return 0
+  fi
+
+  # Le bloc AUTO est la seule observation logée dans le noyau : on le prélève,
+  # on écrase, on le remet. C'est l'unique fusion du dispositif.
+  local auto
+  auto=$(sauver_auto "$cible") || auto=""
+
+  while IFS='|' read -r src dst; do
+    [ -f "$AT_NOYAU/$src" ] || continue
+    poser "$AT_NOYAU/$src" "$cible/$dst"
+  done <<EOF
+$(manifeste)
+EOF
+  chmod +x "$cible"/.claude/hooks/*.sh 2>/dev/null
+
+  if [ -n "$auto" ] && [ -s "$auto" ]; then
+    at_remplace_bloc "$cible/.claude/skills/teach/SKILL.md" auto "$auto"
+    ok "bloc AUTO préservé ($(wc -l < "$auto" | tr -d ' ') lignes)"
+  fi
+  [ -n "$auto" ] && rm -f "$auto"
+
+  ok "noyau mis à jour en $VERSION"
+
+  if ! cmp -s "$AT_NOYAU/settings.json" "$cible/.claude/settings.json"; then
+    echo
+    echo "settings.json diffère et n'a pas été touché — il t'appartient. Diff :"
+    diff -u "$cible/.claude/settings.json" "$AT_NOYAU/settings.json" | sed 's/^/  /'
+  fi
+}
+
+# -------------------------------------------------------------- doctor ------
+
+cmd_doctor() {
+  local cible="${1:-.}" pb=0
+  cible=$(cd "$cible" 2>/dev/null && pwd) || at_die "dossier introuvable : ${1:-.}"
+  echo "agent-teach doctor — $cible"
+  echo
+
+  echo "Noyau"
+  local src dst
+  while IFS='|' read -r src dst; do
+    if [ -f "$cible/$dst" ]; then ok "$dst"; else manque "$dst — absent"; pb=$(( pb + 1 )); fi
+  done <<EOF
+$(manifeste)
+EOF
+  if [ -x "$cible/.claude/hooks/echeances.sh" ]; then ok "hooks exécutables"
+  else manque "hooks non exécutables — chmod +x .claude/hooks/*.sh"; pb=$(( pb + 1 )); fi
+
+  echo
+  echo "Espace apprenant"
+  local f
+  for f in checklist profil journal glossaire; do
+    if [ -f "$cible/progression/$f.md" ]; then ok "progression/$f.md"
+    else manque "progression/$f.md — absent"; pb=$(( pb + 1 )); fi
+  done
+  local b
+  for b in dus modules; do
+    if grep -q "at:$b:debut" "$cible/progression/checklist.md" 2>/dev/null \
+    && grep -q "at:$b:fin"   "$cible/progression/checklist.md" 2>/dev/null; then
+      ok "balises at:$b intactes"
+    else
+      manque "balises at:$b absentes de checklist.md — le moteur ne sait plus où écrire"
+      pb=$(( pb + 1 ))
+    fi
+  done
+  if grep -q 'at:profil:debut' "$cible/progression/profil.md" 2>/dev/null; then ok "balises at:profil intactes"
+  else manque "balises at:profil absentes de profil.md"; pb=$(( pb + 1 )); fi
+  if grep -q 'at:auto:debut' "$cible/.claude/skills/teach/SKILL.md" 2>/dev/null; then ok "bloc AUTO présent"
+  else manque "bloc AUTO absent de SKILL.md — /tune n'aura nulle part où écrire"; pb=$(( pb + 1 )); fi
+
+  echo
+  echo "Droit d'auteur"
+  if [ ! -d "$cible/.git" ]; then
+    note "pas de dépôt git ici — rien à exclure pour l'instant"
+  elif grep -q '^cours/' "$cible/.gitignore" 2>/dev/null; then
+    ok "cours/ est exclu du versionnement"
+  else
+    manque "cours/ N'EST PAS exclu — ce sont les supports du professeur, sous son droit"
+    manque "d'auteur. Ajouter 'cours/' au .gitignore avant tout commit."
+    pb=$(( pb + 1 ))
+  fi
+
+  echo
+  echo "Environnement"
+  note "bash $BASH_VERSION"
+  note "date : $AT_DATE_FLAVOUR"
+  if [ "$(at_date_plus 2026-02-28 1)" = "2026-03-01" ]; then ok "arithmétique de dates correcte"
+  else manque "arithmétique de dates cassée — le calendrier serait faux"; pb=$(( pb + 1 )); fi
+  if AT_RACINE="$cible" "$cible/.claude/hooks/echeances.sh" etat >/dev/null 2>&1; then
+    ok "le moteur d'échéances répond"
+  else
+    manque "le moteur d'échéances échoue — lancer .claude/hooks/echeances.sh etat pour voir"
+    pb=$(( pb + 1 ))
+  fi
+
+  echo
+  if [ "$pb" -eq 0 ]; then
+    echo "Rien à signaler."
+  else
+    printf '%s problème(s). Une réinstallation par « agent-teach init %s » répare le\n' "$pb" "$cible"
+    echo "noyau sans toucher à progression/."
+    return 1
+  fi
+}
+
+# ---------------------------------------------------------------- aiguillage -
+
+[ $# -ge 1 ] || usage 0
+CMD="$1"; shift
+case "$CMD" in
+  init)            cmd_init "$@" ;;
+  maj)             cmd_maj "$@" ;;
+  doctor)          cmd_doctor "$@" ;;
+  echeances)       exec "$AT_NOYAU/hooks/echeances.sh" "$@" ;;
+  version|--version) echo "agent-teach $VERSION" ;;
+  -h|--help|aide)  usage 0 ;;
+  *) at_err "sous-commande inconnue : $CMD"; usage 1 ;;
+esac
