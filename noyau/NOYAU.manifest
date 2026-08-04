@@ -1,0 +1,44 @@
+# agent-teach — manifeste du noyau.
+#
+# Liste exhaustive des fichiers qu'une mise à jour a le droit d'écraser dans un
+# dossier de cours. Ce fichier EST le contrat de la zone NOYAU : `agent-teach maj`
+# ne touche à rien d'autre, et ce qui n'y figure pas est structurellement protégé.
+#
+# Un fichier absent de cette liste ne sera jamais réécrit par une mise à jour,
+# même si le noyau en livre une nouvelle version. C'est ce qui met `curriculum.md`,
+# `CLAUDE.md` et tout `progression/` hors d'atteinte : ils n'y sont pas.
+#
+# Format : une ligne par fichier, `source-dans-le-dépôt -> chemin-dans-le-cours`.
+# Les lignes vides et celles commençant par « # » sont ignorées.
+#
+# Exception unique et connue : SKILL.md contient un bloc <!-- at:auto:… --> écrit
+# par /tune depuis le journal. `maj` le prélève avant d'écraser le fichier et le
+# réinjecte après. C'est la seule fusion du dispositif, et elle est mécanique.
+
+skills/teach/SKILL.md                     -> .claude/skills/teach/SKILL.md
+skills/teach/references/conduite.md       -> .claude/skills/teach/references/conduite.md
+skills/teach/references/taxonomie.md      -> .claude/skills/teach/references/taxonomie.md
+skills/teach/references/formats.md        -> .claude/skills/teach/references/formats.md
+skills/teach/references/boucle-seance.md  -> .claude/skills/teach/references/boucle-seance.md
+skills/teach/references/intake.md         -> .claude/skills/teach/references/intake.md
+skills/teach/references/ingestion.md      -> .claude/skills/teach/references/ingestion.md
+skills/teach/references/fiches.md         -> .claude/skills/teach/references/fiches.md
+
+commands/intake.md                        -> .claude/commands/intake.md
+commands/seance.md                        -> .claude/commands/seance.md
+commands/revision.md                      -> .claude/commands/revision.md
+commands/fiche.md                         -> .claude/commands/fiche.md
+commands/tune.md                          -> .claude/commands/tune.md
+commands/maj.md                           -> .claude/commands/maj.md
+
+hooks/lib.sh                              -> .claude/hooks/lib.sh
+hooks/echeances.sh                        -> .claude/hooks/echeances.sh
+hooks/session-start.sh                    -> .claude/hooks/session-start.sh
+hooks/journal-gate.sh                     -> .claude/hooks/journal-gate.sh
+
+NOYAU.manifest                            -> .claude/NOYAU.manifest
+VERSION                                   -> .claude/VERSION
+
+# settings.json n'est PAS dans la liste : l'apprenant y ajoute ses propres
+# permissions, et les écraser lui coûterait sa configuration. `maj` en propose
+# un diff, comme pour la zone intermédiaire.
