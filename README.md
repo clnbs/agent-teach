@@ -1,7 +1,8 @@
 # agent-teach
 
-Un dossier de cours entre. Un dispositif d'apprentissage qui **se souvient de la façon
-dont tu te plantes** en sort.
+Tu déposes tes supports de cours dans un dossier. agent-teach en tire un dispositif de
+révision qui se souvient de **la façon dont tu te plantes** : tes erreurs à toi, datées,
+plutôt qu'un résumé du cours.
 
 ```sh
 git clone <ce-dépôt> ~/agent-teach && ~/agent-teach/install.sh
@@ -31,7 +32,7 @@ agent-teach ajoute la couche qui manque : un modèle d'apprenant persistant, en 
    semaine trois. C'est le dispositif qui déduit sa méthode de tes réponses ; on ne te
    demande jamais de choisir ta pédagogie, et chaque déduction est écrite en clair
    ensuite.
-2. **Des séances.** Douze minutes de re-test par des cas, puis un module, puis **tu
+2. **Des séances.** Douze minutes de re-test sur des cas, puis un module, puis **tu
    produis**. Jamais l'inverse.
 3. **Une écriture.** À la fin de chaque séance, ce qui a coincé **chez toi** : le cas
    posé, ta réponse, et ce qu'on en déduit — en écartant au moins une explication
@@ -89,7 +90,7 @@ Trois invariants tiennent le reste :
 ## Tes données
 
 Elles ne partent nulle part. Il n'y a pas de serveur à qui les envoyer, et c'est un choix
-d'architecture, pas une politique qu'on pourrait changer d'avis.
+d'architecture, pas une politique dont on pourrait changer d'avis un matin.
 
 `progression/` contient des observations intimes sur ta façon d'échouer. Versionne-le si
 tu veux `diff` et retour arrière — mais réfléchis avant de pousser ce dépôt où que ce
