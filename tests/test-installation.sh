@@ -110,6 +110,45 @@ open(p, "w").write(s)
 PY
 contient "doctor voit la balise arrachée" "at:modules" "$("$AT" doctor "$D" 2>&1)"
 
+# --- ce que voit quelqu'un qui clone : le dépôt doit suffire à installer
+#
+# Ce test attrape une classe d'erreur qu'aucun autre ne voit — un fichier présent
+# sur le disque mais jamais versionné. Il a déjà servi une fois : le motif
+# `progression/` du .gitignore avalait noyau/gabarit/progression/, et `init`
+# posait un dossier de cours sans checklist, sans profil et sans journal.
+# On reconstruit le dépôt à partir des seuls fichiers **suivis par git**, avec leur
+# contenu courant. Un fichier oublié du versionnement disparaît donc ici, même s'il
+# est sous la main sur le disque.
+copie_versionnee() {
+  local dest="$1" f
+  ( cd "$AT_DEPOT" && git ls-files ) | while IFS= read -r f; do
+    mkdir -p "$dest/$(dirname "$f")"
+    cp "$AT_DEPOT/$f" "$dest/$f"
+  done
+  chmod +x "$dest/bin/agent-teach" "$dest"/noyau/hooks/*.sh 2>/dev/null
+}
+
+if git -C "$AT_DEPOT" rev-parse --git-dir >/dev/null 2>&1; then
+  C="$AT_TMP/depot-clone"
+  mkdir -p "$C/cours-neuf"
+  copie_versionnee "$C"
+  reussit "un checkout propre installe"  "$C/bin/agent-teach" init "$C/cours-neuf"
+  for f in checklist profil journal glossaire sources; do
+    reussit "  progression/$f.md est livré" test -f "$C/cours-neuf/progression/$f.md"
+  done
+  reussit "et doctor le valide" "$C/bin/agent-teach" doctor "$C/cours-neuf"
+
+  # --- un gabarit manquant échoue franchement, il ne s'installe pas à moitié
+  M="$AT_TMP/depot-ampute"
+  mkdir -p "$M/cible"
+  copie_versionnee "$M"
+  rm -f "$M/noyau/gabarit/progression/journal.md"
+  echoue "un gabarit manquant est fatal" "$M/bin/agent-teach" init "$M/cible"
+  absent "et rien n'est posé à moitié" "journal.md" "$(ls "$M/cible/progression" 2>/dev/null)"
+else
+  echo "  (hors dépôt git — tests du checkout propre sautés)"
+fi
+
 # --- init sur un dossier sans .gitignore complète au lieu de tout réécrire
 E="$AT_TMP/sans-gitignore"
 mkdir -p "$E"

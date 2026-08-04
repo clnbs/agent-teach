@@ -43,7 +43,11 @@ manifeste() {
 }
 
 # Copie un fichier en créant son dossier parent.
+# Un gabarit manquant est fatal, pas un avertissement : une installation à moitié
+# posée passe inaperçue et casse à la première séance.
 poser() {
+  [ -f "$1" ] || at_die "fichier absent du dépôt : $1
+Le dépôt est incomplet. Vérifie qu'aucun de ces fichiers n'est exclu du versionnement."
   mkdir -p "$(dirname "$2")"
   cp "$1" "$2"
 }

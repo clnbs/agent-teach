@@ -1,6 +1,6 @@
 # Dépôt agent-teach — ce fichier ne concerne QUE le dépôt du moteur.
 # Le .gitignore d'un dossier de cours est posé par `agent-teach init`
-# et vit dans noyau/gabarit/gitignore.tpl — c'est lui qui exclut cours/.
+# et vit dans noyau/gabarit/gitignore — c'est lui qui exclut cours/.
 
 # Sorties de tests
 tests/tmp/
@@ -16,9 +16,11 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Aucun dossier de cours ne doit se retrouver ici par accident
-cours/
-progression/
+# Aucun dossier de cours ne doit se retrouver ici par accident.
+# Ancré à la racine : sans le `/`, le motif avalait noyau/gabarit/progression/,
+# et les gabarits de l'espace apprenant n'étaient plus livrés du tout.
+/cours/
+/progression/
 
 # Fichiers de travaux — conception, ADR, notes. Ils restent sur le disque,
 # ils ne sont pas versionnés.
