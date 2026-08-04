@@ -4,13 +4,13 @@
 
 | | |
 |---|---|
-| **Claude Code** | Le dispositif est un skill, des commandes et des hooks — il tourne dedans. |
-| **bash** | Version 3.2 suffit : c'est celle que macOS livre encore, et tout a été écrit pour elle. |
-| **Rien d'autre** | Pas de `jq`, pas de Python, pas de Node, pas de gestionnaire de paquets. Les scripts n'emploient que `awk`, `sed`, `sort` et `date`. |
+| **Claude Code** | Le dispositif est un skill, des commandes et des hooks : il tourne dedans. |
+| **bash** | Version 3.2 suffit, c'est ce que macOS livre. |
+| **Rien d'autre** | Pas de `jq`, pas de Python, pas de Node. Les scripts n'emploient que `awk`, `sed`, `sort` et `date`. |
 
 Testé sur macOS (bash 3.2, date BSD) et Linux (bash 5, date GNU). L'arithmétique de
-dates détecte la variante et se fait en UTC, pour qu'un changement d'heure ne décale
-jamais une échéance.
+dates détecte la variante et travaille en UTC, pour qu'un changement d'heure ne décale
+pas une échéance.
 
 ## Installer
 
@@ -19,9 +19,8 @@ git clone <ce-dépôt> ~/agent-teach
 ~/agent-teach/install.sh
 ```
 
-`install.sh` pose un lien symbolique dans `~/.local/bin` et s'arrête là. Rien de global,
-aucun service, aucun démon. Si `~/.local/bin` n'est pas dans ton `PATH`, il te le dit et
-te donne la ligne à ajouter.
+`install.sh` pose un lien symbolique dans `~/.local/bin` et s'arrête là. Si ce dossier
+n'est pas dans ton `PATH`, il te donne la ligne à ajouter.
 
 Pour l'installer ailleurs : `AT_BIN_DIR=/usr/local/bin ~/agent-teach/install.sh`.
 
@@ -50,14 +49,13 @@ CLAUDE.md              ← idem
 
 Puis, dans l'ordre :
 
-1. **Dépose tes supports dans `cours/`** — PDF, slides, notes, annales. Si tu n'as pas de
-   support, saute cette étape : l'intake proposera le mode « sujet libre » et
-   constituera un corpus qu'il te fera valider.
+1. **Dépose tes supports dans `cours/`** — PDF, slides, notes, annales. Si tu n'en as
+   pas, saute cette étape : l'intake proposera le mode « sujet libre » et constituera un
+   corpus qu'il te fera valider.
 2. **`claude`**, puis **`/intake`**.
 
 Compte un quart d'heure. L'intake s'arrête sur deux validations : le corpus (mode sujet
-libre seulement), puis le curriculum. Ce n'est pas une formalité — un plan validé se
-suit, un plan subi s'abandonne en semaine trois.
+libre seulement), puis le curriculum.
 
 Ensuite, `/seance` à chaque fois.
 
@@ -70,7 +68,7 @@ d'apprenant.
 git init && git add . && git commit -m "installation"
 ```
 
-Deux règles, et la première n'est pas négociable :
+Deux règles :
 
 - **`cours/` reste exclu.** Le `.gitignore` posé par `init` s'en charge. Ce sont les
   supports de ton professeur, sous *son* droit d'auteur : un `git push` sur un dépôt
@@ -86,13 +84,12 @@ agent-teach maj ~/cours/harmonie              # montre le diff, n'écrit rien
 agent-teach maj ~/cours/harmonie --appliquer  # applique
 ```
 
-Ce qui est écrasé est exactement ce que liste `.claude/NOYAU.manifest`, et rien d'autre.
+Ce qui est écrasé est exactement ce que liste `.claude/NOYAU.manifest`.
 `progression/`, `curriculum.md`, `CLAUDE.md` et `settings.json` n'y figurent pas : ils
 sont protégés par leur absence, pas par une précaution du code.
 
-Une seule fusion existe : le bloc de préférences observées de `SKILL.md` est prélevé
-avant l'écrasement et réinjecté après. C'est de l'observation, la perdre coûterait des
-semaines.
+Une seule fusion : le bloc de préférences observées de `SKILL.md` est prélevé avant
+l'écrasement et réinjecté après.
 
 `agent-teach init .` rejoué fait la même chose, en réparant en plus ce qui manque.
 
@@ -103,19 +100,18 @@ agent-teach doctor ~/cours/harmonie
 ```
 
 Il vérifie le noyau fichier par fichier, les balises des tableaux réécrits par le moteur,
-l'arithmétique de dates, et si `cours/` est bien exclu du versionnement. Il code 1 s'il
-trouve quelque chose.
+l'arithmétique de dates, et l'exclusion de `cours/`. Il sort en code 1 s'il trouve
+quelque chose.
 
 | Symptôme | Cause probable | Remède |
 |---|---|---|
 | « aucun dossier de cours trouvé » | La commande est lancée hors du dossier | `cd` dedans, ou `AT_RACINE=/chemin/du/cours` |
-| « balise at:modules:fin absente » | Une balise `<!-- at:… -->` a été supprimée de `checklist.md` | La remettre — le moteur ne sait plus où écrire. `git checkout progression/checklist.md` si tu versionnes. |
+| « balise at:modules:fin absente » | Une balise `<!-- at:… -->` a été supprimée de `checklist.md` | La remettre, le moteur ne sait plus où écrire. `git checkout progression/checklist.md` si tu versionnes. |
 | Les dates ne bougent plus | Les hooks ne sont pas exécutables | `chmod +x .claude/hooks/*.sh`, ou `agent-teach init .` |
 | Le hook de démarrage ne dit rien | L'intake n'a pas été fait, ou `progression/checklist.md` est absent | `/intake` |
 | Une clôture est refusée | C'est prévu : le journal n'a pas été écrit | Écrire l'entrée du jour, puis relancer |
 
-Les commandes du moteur s'appellent aussi directement, ce qui est le moyen le plus court
-de voir ce qui se passe :
+Les commandes du moteur s'appellent aussi directement :
 
 ```sh
 .claude/hooks/echeances.sh etat
@@ -132,8 +128,7 @@ rm -rf ~/agent-teach
 ```
 
 Tes dossiers de cours restent, et restent lisibles : ce sont des fichiers markdown. Le
-noyau dans `.claude/` ne sert plus, `progression/` continue de se lire tout seul. C'était
-le but.
+noyau dans `.claude/` ne sert plus, `progression/` continue de se lire tout seul.
 
 ## Lancer les tests
 
@@ -142,5 +137,4 @@ tests/run.sh              # tout
 tests/run.sh dates garde  # une sélection
 ```
 
-Aucune dépendance là non plus : bash et coreutils, comme le reste. Un test qui aurait
-besoin d'autre chose testerait autre chose que ce qu'on livre.
+Aucune dépendance là non plus : bash et coreutils, comme le reste.
