@@ -42,7 +42,7 @@ progresser les vingt suivantes.
 | `references/fiches.md` | Quand un concept tombe pour la 2ᵉ fois, et pour `/fiche`. |
 | `references/intake.md` | `/intake` uniquement — l'initialisation en deux étapes. |
 | `references/ingestion.md` | `/intake` étape 2 — les passes 0 à 4, du corpus au curriculum. |
-| `references/curriculum.md` | Le plan validé. **Propriété de l'apprenant** : ne jamais le régénérer sans son accord explicite. |
+| `curriculum.md` *(racine du cours)* | Le plan validé. **Propriété de l'apprenant** : ne jamais le régénérer sans son accord explicite. |
 
 | Espace apprenant — `progression/` | Contenu |
 |---|---|
