@@ -1,0 +1,30 @@
+# Dépôt agent-teach — ce fichier ne concerne QUE le dépôt du moteur.
+# Le .gitignore d'un dossier de cours est posé par `agent-teach init`
+# et vit dans noyau/gabarit/gitignore.tpl — c'est lui qui exclut cours/.
+
+# Sorties de tests
+tests/tmp/
+tests/.last-run
+
+# Systèmes de fichiers
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+*.swp
+*~
+.idea/
+.vscode/
+
+# Aucun dossier de cours ne doit se retrouver ici par accident
+cours/
+progression/
+
+# Fichiers de travaux — conception, ADR, notes. Ils restent sur le disque,
+# ils ne sont pas versionnés.
+/META-PLAN.md
+/CLAUDE.md
+/docs/
+/decisions/
+/notes/
+*.brouillon.md
