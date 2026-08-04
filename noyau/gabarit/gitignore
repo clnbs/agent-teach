@@ -1,0 +1,24 @@
+# Dossier de cours agent-teach.
+
+# LE SUPPORT NE SE VERSIONNE PAS.
+#
+# cours/ contient les polycopiés, slides et annales de ton professeur : ils sont
+# sous SON droit d'auteur, pas le tien. En mode « sujet libre », le dispositif y
+# ajoute en plus des copies locales de sources trouvées en ligne.
+#
+# Un `git push` de ce dossier sur un dépôt public te crée un problème juridique
+# réel. Ne retire pas cette ligne.
+cours/
+
+# État de séance en cours — transitoire, propre à la machine.
+.claude/.seance/
+
+# Systèmes de fichiers
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# progression/ n'est PAS ignoré, et c'est voulu : le versionner donne diff,
+# historique et retour arrière sur ton modèle d'apprenant. Il ne quitte ta
+# machine que si tu pousses ce dépôt quelque part — réfléchis avant, il contient
+# des observations intimes sur ta façon d'échouer.
