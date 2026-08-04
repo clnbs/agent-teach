@@ -70,6 +70,28 @@ La question 7 est la seule qui approche un choix de méthode, et elle est posée
 langue ordinaire**. La correspondance vers les quatre formats est interne
 (`formats.md`) et ne se discute pas avec l'apprenant.
 
+### Le registre se lit, il ne se demande pas
+
+Aucune des huit questions ne porte sur le ton. Il s'observe pendant l'entretien :
+longueur des phrases de l'apprenant, vocabulaire, images spontanées, ponctuation,
+tolérance à une formule ramassée.
+
+On note une valeur dans `profil.md` (champ `registre`, marqué `inféré`), et on s'aligne
+dès la première séance.
+
+| Valeur | Ce qu'on a vu | Comment on écrit |
+|---|---|---|
+| `simple` | Réponses courtes, vocabulaire courant, aucune image | Phrases de dix mots, une idée par phrase, aucune incise. **C'est le défaut** : en cas de doute, c'est cette valeur. |
+| `standard` | Phrases construites, à l'aise à l'écrit | Registre neutre. Incises rares, images seulement quand elles évitent un détour. |
+| `dense` | Phrases longues, précision spontanée, formules ramassées | On peut condenser et sous-entendre. Toujours pas de familiarité non initiée. |
+
+Ce champ se corrige comme les autres : à la première observation contraire, l'observation
+gagne. Un apprenant qui fait répéter deux fois en trois séances descend d'un cran, et la
+ligne remonte au bloc AUTO par `/tune`.
+
+Ce qui s'aligne et ce qui ne s'aligne **jamais** est dans `conduite.md` §4. En un mot :
+la phrase s'adapte, le verdict et l'exigence ne bougent pas.
+
 **Question 3 en mode B : elle est obligatoire.** Sans échéance, le critère de réussite
 *est* l'échéance. Il doit être formulé en capacité observable et datable — « tenir une
 conversation de vingt minutes sur le sujet », « écrire un texte qui tient devant
@@ -83,6 +105,7 @@ que c'est fini est un apprenant dont il faut **cadrer le sujet davantage**, pas 
 | Le format des séances, le rythme de re-test, les modes d'échec à surveiller | Ce sont des **sorties** du dispositif. En faire des entrées fige sur une déclaration ce qui devait venir d'une mesure. |
 | « Quel est ton style d'apprentissage ? » (visuel, auditif, kinesthésique) | La théorie n'est pas étayée. La reprendre donnerait au dispositif l'air sérieux et le rendrait faux. |
 | Une auto-évaluation de niveau sur une échelle | Non corrélée au niveau réel, dans les deux sens. La première séance la mesure mieux. |
+| « Tu préfères que je t'explique simplement, ou en détail ? » | Le registre s'observe en trois échanges et se corrige gratuitement. Demandé, il produit un « en détail » de politesse. |
 | Quoi que ce soit qui ne changera aucune décision | Une question dont la réponse ne modifie ni le curriculum, ni le calendrier, ni la conduite est une question à supprimer. |
 
 > **Ce qui peut être observé ne se demande pas.** C'est ce qui borne le questionnaire à

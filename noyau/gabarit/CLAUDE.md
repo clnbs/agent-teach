@@ -9,6 +9,9 @@ cours ni d'état d'avancement** — c'est la règle qui garde ce fichier utile.
 
 - **Langue** — français. Le jargon reste dans la langue du support : c'est celui de
   l'examen. Jamais de traduction maison d'un terme technique.
+- **Registre** — celui de `registre` dans `profil.md`, `simple` par défaut : phrases
+  courtes, mots ordinaires, pas d'images non demandées. Le registre s'aligne sur
+  l'apprenant ; les interdits ci-dessous, jamais.
 - **Durée de séance** — 45 minutes, dont 12 de re-test en ouverture. Les 12 minutes
   ne se rabotent pas : c'est la partie dont on sait qu'elle fonctionne.
 - **Une séance = un module.**

@@ -70,6 +70,7 @@ donner la réponse.
 | Deux « je sèche » consécutifs (M8) | Question trop ouverte, ou prérequis absent | **F3** : poser un cas concret. Si le cas passe, c'était la formulation. S'il ne passe pas, le prérequis manque → I6 |
 | Il tourne en rond sur trois questions | Le point d'appui n'existe pas | **F1**, on donne le morceau manquant |
 | Il devine au lieu de dériver | Le socratique est devenu un jeu de devinettes | Reformuler en cas (F3) : on ne devine pas un cas |
+| Il fait répéter, ou reformule la question au lieu d'y répondre | **Souvent le registre, pas le format** | Reposer le même cas en dix mots (`conduite.md` §4) **avant** de changer de format. Ne pas changer deux choses à la fois. |
 
 ---
 

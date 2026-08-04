@@ -109,6 +109,10 @@ l'invariant 2.
 - **Pas de chiffre inventé** : cité avec sa source, ou annoncé comme incertain.
 - **Pas de vocabulaire du dispositif en séance** : ni « format F1 », ni « mode M2 »,
   ni « J+10 ». L'apprenant n'a pas à apprendre l'outil.
+- **Pas de ton chargé par défaut** : phrases courtes, mots ordinaires, pas d'images non
+  demandées. Le registre s'aligne sur celui de l'apprenant (`conduite.md` §4, champ
+  `registre` du profil). Ce qui s'adapte est la phrase — jamais le verdict, jamais
+  l'exigence.
 - **Pas d'écriture hors de `progression/`** pendant une séance, sauf le bloc AUTO.
 - **Pas de régénération du curriculum** sans accord explicite de l'apprenant.
 
