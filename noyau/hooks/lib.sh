@@ -30,12 +30,21 @@ fi
 
 at_today() { date +%Y-%m-%d; }
 
+# Une date est valide si elle a la forme attendue ET si elle survit à
+# l'aller-retour. Le second test n'est pas du zèle : `date` en version BSD accepte
+# 2026-02-30 et le reporte silencieusement au 2 mars. Une échéance décalée de deux
+# jours sans que personne ne le voie est exactement ce que ce dispositif ne doit
+# pas produire.
 at_date_valide() {
+  local e r
   case "$1" in
     [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) : ;;
     *) return 1 ;;
   esac
-  at_epoch "$1" >/dev/null 2>&1
+  e=$(at_epoch "$1" 2>/dev/null) || return 1
+  [ -n "$e" ] || return 1
+  r=$(at_depuis_epoch "$e" 2>/dev/null) || return 1
+  [ "$r" = "$1" ]
 }
 
 # at_epoch AAAA-MM-JJ -> secondes depuis l'époque, minuit UTC
@@ -98,6 +107,30 @@ at_racine() {
     d=$(dirname "$d")
   done
   return 1
+}
+
+# ------------------------------------------------------------- séance --------
+
+# Empreinte d'un fichier. `cksum` est partout, contrairement à sha256sum/shasum.
+at_empreinte() {
+  if [ -f "$1" ]; then cksum < "$1"; else echo absent; fi
+}
+
+# at_journal_ecrit RACINE -> 0 si le journal a été écrit depuis l'ouverture.
+#
+# On compare une empreinte, pas des dates de modification : `-nt` en bash 3.2 ne
+# voit que les secondes, et une séance ouverte puis close dans la même seconde
+# passerait pour non écrite. L'empreinte répond à la vraie question — le fichier
+# a-t-il changé pendant cette séance — sans dépendre de l'horloge.
+at_journal_ecrit() {
+  local seance="$1/.claude/.seance" journal="$1/progression/journal.md"
+  [ -f "$seance/ouverture" ] || return 0   # pas de séance ouverte : rien à garder
+  [ -f "$journal" ] || return 1
+  if [ -f "$seance/journal-empreinte" ]; then
+    [ "$(at_empreinte "$journal")" != "$(cat "$seance/journal-empreinte")" ]
+  else
+    [ "$journal" -nt "$seance/ouverture" ]
+  fi
 }
 
 # ------------------------------------------------------ tableaux balisés -----

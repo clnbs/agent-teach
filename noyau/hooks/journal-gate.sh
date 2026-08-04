@@ -32,7 +32,6 @@ case "$charge" in
 esac
 
 RACINE=$(at_racine) || exit 0
-JOURNAL="$RACINE/progression/journal.md"
 SEANCE="$RACINE/.claude/.seance"
 
 # Aucune clôture refusée en attente : rien à garder.
@@ -45,7 +44,7 @@ if [ ! -f "$SEANCE/ouverture" ]; then
 fi
 
 # Le journal a été écrit entre-temps : la garde s'efface d'elle-même.
-if [ -f "$JOURNAL" ] && [ "$JOURNAL" -nt "$SEANCE/ouverture" ]; then
+if at_journal_ecrit "$RACINE"; then
   rm -f "$SEANCE/cloture-refusee"
   exit 0
 fi

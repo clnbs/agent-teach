@@ -42,7 +42,7 @@ if [ -f "$SEANCE/ouverture" ]; then
   module=$(cat "$SEANCE/module" 2>/dev/null)
   date_o=$(cat "$SEANCE/date" 2>/dev/null)
   echo "⚠ **Séance non close** — module \`${module:-?}\`, ouverte le ${date_o:-?}."
-  if [ -f "$JOURNAL" ] && [ "$JOURNAL" -nt "$SEANCE/ouverture" ]; then
+  if at_journal_ecrit "$RACINE"; then
     echo "Le journal a été écrit. Clore avec :"
     echo '`.claude/hooks/echeances.sh cloturer '"${module:-<module>}"' <acquis|fragile|a-revoir>`'
   else

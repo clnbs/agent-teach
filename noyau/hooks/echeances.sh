@@ -90,14 +90,18 @@ est_du() {
   esac
 }
 
+# Les comparaisons d'identifiant se font en `$1 "" == id ""`, et la concaténation
+# n'est pas décorative : awk traite un champ et une variable passées par -v comme
+# des nombres quand ils en ont l'air, si bien que « 1.1 » et « 1.10 » sont égaux.
+# La concaténation avec la chaîne vide force la comparaison textuelle.
 exige_module() {
-  awk -F'|' -v id="$1" '$1 == id { trouve = 1 } END { exit !trouve }' "$2" \
+  awk -F'|' -v id="$1" '$1 "" == id "" { trouve = 1 } END { exit !trouve }' "$2" \
     || at_die "module « $1 » absent de la checklist. \`ajouter\` d'abord."
 }
 
 # Ligne complète d'un module, ou vide.
 ligne_module() {
-  awk -F'|' -v id="$1" '$1 == id { print; exit }' "$2"
+  awk -F'|' -v id="$1" '$1 "" == id "" { print; exit }' "$2"
 }
 
 # Réécrit aussi la section « à re-tester au prochain démarrage ».
@@ -277,17 +281,15 @@ cmd_ouvrir() {
   printf '%s\n' "$1" > "$SEANCE/module"
   printf '%s\n' "$AUJOURDHUI" > "$SEANCE/date"
   rm -f "$SEANCE/cloture-refusee"
-  # Le marqueur sert de repère temporel : le journal devra lui être postérieur.
+  # Le marqueur ouvre la séance ; l'empreinte fige l'état du journal au moment
+  # de l'ouverture. La clôture comparera, et c'est ce qui rend la garde exacte.
   : > "$SEANCE/ouverture"
+  at_empreinte "$JOURNAL" > "$SEANCE/journal-empreinte"
   echo "Séance ouverte sur le module $1 au $AUJOURDHUI."
   echo "Elle ne pourra pas être close tant que progression/journal.md n'aura pas été écrit."
 }
 
-journal_ecrit() {
-  [ -f "$SEANCE/ouverture" ] || return 0
-  [ -f "$JOURNAL" ] || return 1
-  [ "$JOURNAL" -nt "$SEANCE/ouverture" ]
-}
+journal_ecrit() { at_journal_ecrit "$RACINE"; }
 
 cmd_retest() {
   [ $# -ge 2 ] || at_die "usage : retest <module> <ok|rate|partiel> [--note …]"
@@ -333,7 +335,7 @@ cmd_retest() {
   rafraichir_dus "$AUJOURDHUI"
 
   local ligne
-  ligne=$(at_modules "$CHECKLIST" | awk -F'|' -v id="$id" '$1 == id { print; exit }')
+  ligne=$(at_modules "$CHECKLIST" | awk -F'|' -v id="$id" '$1 "" == id "" { print; exit }')
   printf 'Re-test %s sur %s → statut %s, barreau %s, prochain le %s.\n' \
     "$verdict" "$id" "$(at_champ "$ligne" 3)" "$(at_champ "$ligne" 7)" "$(at_champ "$ligne" 8)"
   case "$verdict" in
@@ -397,10 +399,11 @@ cmd_cloturer() {
   ecrire_modules "$tmp"
   rm -f "$charge" "$tmp"
   rafraichir_dus "$AUJOURDHUI"
-  rm -f "$SEANCE/ouverture" "$SEANCE/module" "$SEANCE/date" "$SEANCE/cloture-refusee"
+  rm -f "$SEANCE/ouverture" "$SEANCE/module" "$SEANCE/date" \
+        "$SEANCE/cloture-refusee" "$SEANCE/journal-empreinte"
 
   local ligne
-  ligne=$(at_modules "$CHECKLIST" | awk -F'|' -v id="$id" '$1 == id { print; exit }')
+  ligne=$(at_modules "$CHECKLIST" | awk -F'|' -v id="$id" '$1 "" == id "" { print; exit }')
   printf 'Module %s clos en %s. Prochain re-test : %s.\n' "$id" "$statut" "$(at_champ "$ligne" 8)"
 
   local fprev freal
