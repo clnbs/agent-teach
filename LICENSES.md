@@ -8,7 +8,7 @@ les données d'apprentissage — n'est pas couvert du tout, et c'est volontaire.
 |---|---|---|
 | **Noyau** — skill, références, hooks, commandes, CLI, gabarits, tests | `noyau/`, `bin/`, `tests/`, `install.sh` | **Apache 2.0** ([`LICENSE`](LICENSE)) |
 | **Curricula vitrine et communautaires** | `exemples/curriculum-*.md` | **CC BY-SA 4.0** |
-| **Documentation** | `docs/`, `decisions/`, `README.md`, `META-PLAN.md` | **CC BY 4.0** |
+| **Documentation** | `README.md`, `CONTRIBUTING.md`, `INSTALLATION.md` | **CC BY 4.0** |
 | **Données d'apprentissage d'un apprenant** | le `progression/` et le `cours/` de chaque dossier de cours | **appartient à l'apprenant** — voir ci-dessous |
 
 - CC BY-SA 4.0 : <https://creativecommons.org/licenses/by-sa/4.0/legalcode.fr>
@@ -25,7 +25,9 @@ cas de fork.
 curriculum amélioré doit revenir à la communauté ; c'est le bon endroit pour du
 *share-alike*, et le noyau ne l'est pas.
 
-Raisonnement complet dans [`docs/06-open-source.md`](docs/06-open-source.md).
+Règle générale : **on ouvre ce qui n'est pas protégeable, on garde ce qui coûte cher à
+produire.** Et l'interdit correspondant : ne jamais ouvrir un curriculum de domaine
+régulé pour faire nombre. Ouvert une fois, il est ouvert pour toujours.
 
 ## Les données d'apprentissage n'ont pas de licence, elles ont un propriétaire
 
